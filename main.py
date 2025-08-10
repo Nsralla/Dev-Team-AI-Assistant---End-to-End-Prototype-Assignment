@@ -32,9 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-employees_file_path = r"./data/employees.json"
-deployments_file_path = r"./data/deployments.json"
-jira_tickets_file_path = r"./data/jira_tickets.json"
+
 
 # Global exception handler
 @app.exception_handler(Exception)

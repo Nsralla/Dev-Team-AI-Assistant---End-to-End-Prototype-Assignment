@@ -1,10 +1,13 @@
 import os
 import requests
-
+from dotenv import load_dotenv
+load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 def ask_llama3(system_prompt:str, user_prompt: str):
+    if not GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY is not set")
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {GROQ_API_KEY}"
