@@ -1,14 +1,16 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 import logging
 import traceback
-
+from app.services.router import route_query
+from sqlalchemy.orm import Session
+from app.services.classifier import classify_query_with_llm
 from app.services.groq_client import ask_llama3
 from app.services.kb_retriever import search_kb
-
+from create_db import SessionLocal
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -50,11 +52,22 @@ async def validation_exception_handler(request, exc):
     logger.error(f"Validation error: {str(exc)}")
     return await request_validation_exception_handler(request, exc)
 
+
+# END POINT TO RETREIVE RELEVANT DOCS FROM FAISS
 @app.get('/kb/search')
 def kb_search(q:str=Query(...), k:int=5):
     results = search_kb(q, k)
     return results
 
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# END POINT TO RETRIEVE RELEVANT DOCS FROM FAISS THEN SEND TO GROQ LLM TO GENERATE PROPER RESPONSE
 @app.get('/kb/ask')
 def kb_ask(q:str=Query(...), k:int=5):
     chunks = search_kb(q, k)
@@ -68,3 +81,14 @@ def kb_ask(q:str=Query(...), k:int=5):
         "answer": response,
         "sources": chunks
     }
+
+
+# END POINT TO CLASSIFY USER QUERY INTO DB, OR KB
+@app.get("/route/classify")
+def api_classify(q: str = Query(...)):
+    return classify_query_with_llm(q)
+
+# END POINT TO RESPOND TO USER QUERY BASED ON ROUTING
+@app.get("/route/ask")
+def api_route(q: str = Query(...), db: Session = Depends(get_db)):
+    return route_query(q, db)

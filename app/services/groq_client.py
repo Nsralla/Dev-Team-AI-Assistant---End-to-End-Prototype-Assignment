@@ -3,6 +3,7 @@ import requests
 from dotenv import load_dotenv
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_LLM_MODEL = os.getenv("GROQ_LLM_MODEL", "llama-4-scout-17b-16e-instruct") # load the LLM model
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 def ask_llama3(system_prompt:str, user_prompt: str):
@@ -13,7 +14,7 @@ def ask_llama3(system_prompt:str, user_prompt: str):
         "Authorization": f"Bearer {GROQ_API_KEY}"
     }
     payload = {
-        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "model": f"meta-llama/{GROQ_LLM_MODEL}",
         "messages": [
             {"role":"system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
